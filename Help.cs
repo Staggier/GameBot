@@ -18,13 +18,13 @@ namespace GameBot
 
             if (commands.RegisteredCommands.ContainsKey(cmd))
             {
-                DiscordEmbedBuilder embed = await HelpMessage(cmd, commands.RegisteredCommands[cmd].Description);
+                DiscordEmbedBuilder embed = await DiscordEmbed.HelpMessage(cmd, commands.RegisteredCommands[cmd].Description);
                 await ctx.Channel.SendMessageAsync(null, false, embed);
             }
             else
             {
                 string descriptions = await GetDescriptions(commands);
-                DiscordEmbedBuilder embed = cmd == "" ? await HelpMessage(cmd, descriptions) : await ErrorMessage("Command not found!");
+                DiscordEmbedBuilder embed = cmd == "" ? await DiscordEmbed.HelpMessage(cmd, descriptions) : await DiscordEmbed.ErrorMessage("Command not found!");
 
                 if (cmd == "")
                     await ctx.Channel.SendMessageAsync(null, false, embed);
@@ -39,26 +39,6 @@ namespace GameBot
             foreach (KeyValuePair<string, Command> command in commands.RegisteredCommands)
                 desc += $"{command.Value.Description}\n";
             return Task.FromResult(desc);
-        }
-
-        public Task<DiscordEmbedBuilder> HelpMessage(string cmd, string desc)
-        {
-            return Task.FromResult(new DiscordEmbedBuilder
-            {
-                Color = new DiscordColor(66, 245, 173),
-                Description = desc,
-                Title = cmd != "" ? "Command" : "Commands",
-            });
-        }
-
-        public Task<DiscordEmbedBuilder> ErrorMessage(string desc)
-        {
-            return Task.FromResult(new DiscordEmbedBuilder
-            {
-                Color = new DiscordColor(209, 6, 6),
-                Description = desc,
-                Title = "Error:"
-            });
         }
     }
 }
