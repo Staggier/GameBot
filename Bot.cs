@@ -1,14 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
+﻿using System.IO;
 using System.Threading.Tasks;
 using DSharpPlus;
-using DSharpPlus.Net;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Entities;
-using System.Collections.Immutable;
 
 namespace GameBot
 {
@@ -28,7 +21,9 @@ namespace GameBot
                 Token = token
             });
 
-            commands = discordBot.UseCommandsNext(new CommandsNextConfiguration { StringPrefix = "!" });
+            commands = discordBot.UseCommandsNext(new CommandsNextConfiguration { StringPrefix = "!", EnableDefaultHelp = false });
+
+            commands.RegisterCommands<HelpCommand>();
 
             await discordBot.ConnectAsync();
             await Task.Delay(-1);

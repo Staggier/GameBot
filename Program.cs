@@ -1,8 +1,4 @@
-﻿using System.Threading.Tasks;
-using DSharpPlus;
-using System.IO;
-
-namespace GameBot
+﻿namespace GameBot
 {
     class Program
     {
