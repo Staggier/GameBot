@@ -1,19 +1,19 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using ImageMagick;
+using Imgur.API.Endpoints.Impl;
+using Imgur.API.Authentication.Impl;
 
 namespace GameBot
 {
     public class Card
     {
-        public MagickImage cardImg;
-        public string suit, value;
+        public string suit, value, img;
 
         public Card(string card)
         {
             int len = card.Length;
-            cardImg = new MagickImage($"Deck/{card}.png");
             value = len == 2 ? card[0].ToString() : card[0].ToString() + card[1].ToString();
             suit = len == 2 ? card[1].ToString() : card[2].ToString();
         }
@@ -21,8 +21,8 @@ namespace GameBot
 
     public class Deck
     {
-        public List<Card> deck;
-        public Deck() => deck = CreateDeck().Result;
+        public List<Card> card;
+        public Deck() => card = CreateDeck().Result;
 
         public async Task<List<Card>> CreateDeck()
         {
@@ -35,26 +35,50 @@ namespace GameBot
             };
 
             List<Card> deck = new List<Card>();
-            foreach(string s in cards)
+
+            var client = new ImgurClient(new StreamReader("client.txt").ReadLine());
+            var endpoint = new AlbumEndpoint(client);
+            IEnumerable<Imgur.API.Models.IImage> album = await endpoint.GetAlbumImagesAsync("hooDPPB");
+
+            foreach (string s in cards)
                 deck.Add(new Card(s));
+
+            int count = 0;
+            foreach (Imgur.API.Models.IImage img in album)
+            {
+                if (count > 51)
+                    break;
+                deck[count++].img = img.Link;
+            }
 
             return await Task.FromResult(deck);
         }
 
         public Task Shuffle()
         {
-            int n = deck.Count;
+            int n = card.Count;
             Random random = new Random();
 
             for (int i = 0; i < n; i++)
             {
                 int j = random.Next(n);
-                Card c = deck[j];
+                Card c = card[j];
 
-                deck[j] = deck[i];
-                deck[i] = c;
+                card[j] = card[i];
+                card[i] = c;
             }
             return Task.CompletedTask;
+        }
+
+        public Task<List<Card>> Draw(int numCards)
+        {
+            List<Card> cards = new List<Card>();
+            for (int i = 0; i < numCards; i++)
+            {
+                cards.Add(card[0]);
+                card.RemoveAt(0);
+            }
+            return Task.FromResult(cards);
         }
     }
 }
