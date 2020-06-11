@@ -21,12 +21,12 @@ namespace GameBot
             }
         }
 
-        public static Task TopDeckImg(Deck deck)
+        public static Task TopDeckImg(Deck deck, List<Card> pile)
         {
             using (var images = new MagickImageCollection())
             {
                 images.Add(deck.color);
-                images.Add(deck.card[0].img);
+                images.Add(pile[0].img);
 
                 using (var result = images.AppendHorizontally())
                 {

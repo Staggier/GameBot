@@ -23,10 +23,11 @@ namespace GameBot
     {
         public List<Card> card;
         public string color;
+
         public Deck(string color = "blue")
         {
             this.color = color;
-            this.card = CreateDeck().Result;
+            card = CreateDeck().Result;
         }
 
         public async Task<List<Card>> CreateDeck()
@@ -63,9 +64,8 @@ namespace GameBot
             foreach (Imgur.API.Models.IImage img in cardImages)
                 deck[count++].img = img.Link;
 
-            this.color = colorIndex[color];
-
-            return await Task.FromResult(deck);
+            color = colorIndex[color];
+            return deck;
         }
 
         public Task Shuffle()

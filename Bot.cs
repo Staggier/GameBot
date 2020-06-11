@@ -24,6 +24,7 @@ namespace GameBot
             commands = discordBot.UseCommandsNext(new CommandsNextConfiguration { StringPrefix = "!", EnableDefaultHelp = false });
 
             commands.RegisterCommands<HelpCommand>();
+            commands.RegisterCommands<CrazyEightsCommand>();
 
             await discordBot.ConnectAsync();
             await Task.Delay(-1);
