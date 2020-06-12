@@ -60,7 +60,7 @@ namespace GameBot
                     player.hand.Remove(c);
 
                 await Display.HandImg(player.hand);
-                await Display.TopDeckImg(game.deck, game.pile);
+                await Display.TopPileImg(game.pile);
 
                 await ctx.Channel.SendFileAsync("hand.png");
                 await ctx.Channel.SendFileAsync("top.png");
@@ -88,19 +88,18 @@ namespace GameBot
         {
             if (!b1)
             {
+                b1 = true;
                 foreach (Player player in game.players)
                 {
                     player.hand = await game.deck.Draw(5);
                     await Display.HandImg(player.hand);
-
                     await ctx.Channel.SendFileAsync("hand.png");
                 }
 
-                b1 = true;
                 game.pile.Add(game.deck.card[0]);
                 game.deck.card.RemoveAt(0);
 
-                await Display.TopDeckImg(game.deck, game.pile);
+                await Display.TopPileImg(game.pile);
                 await ctx.Channel.SendFileAsync("top.png");
             }
             await Task.Delay(-1);

@@ -22,13 +22,7 @@ namespace GameBot
     public class Deck
     {
         public List<Card> card;
-        public string color;
-
-        public Deck(string color = "blue")
-        {
-            this.color = color;
-            card = CreateDeck().Result;
-        }
+        public Deck() => card = CreateDeck().Result;
 
         public async Task<List<Card>> CreateDeck()
         {
@@ -40,22 +34,12 @@ namespace GameBot
                 "10S", "JC", "JD", "JH", "JS", "QC", "QD", "QH", "QS", "KC",  "KD",  "KH",  "KS"
             };
 
-            Dictionary<string, string> colorIndex = new Dictionary<string, string>()
-            {
-                  ["blue"] = "https://imgur.com/KDdcIMJ.png",
-                  ["gray"] = "https://imgur.com/UMUw6f3.png",
-                 ["green"] = "https://imgur.com/tIt4zJf.png",
-                ["purple"] = "https://imgur.com/ifr6Zxv.png",
-                   ["red"] = "https://imgur.com/fbrus8t.png",
-                ["yellow"] = "https://imgur.com/WrpFv0w.png"
-            };
-
             List<Card> deck = new List<Card>();
 
             var client = new ImgurClient(new StreamReader("client.txt").ReadLine());
             var endpoint = new AlbumEndpoint(client);
 
-            IEnumerable<Imgur.API.Models.IImage> cardImages = await endpoint.GetAlbumImagesAsync("hooDPPB");
+            IEnumerable<Imgur.API.Models.IImage> cardImages = await endpoint.GetAlbumImagesAsync("Hql2IxW");
 
             foreach (string s in cards)
                 deck.Add(new Card(s));
@@ -64,7 +48,6 @@ namespace GameBot
             foreach (Imgur.API.Models.IImage img in cardImages)
                 deck[count++].img = img.Link;
 
-            color = colorIndex[color];
             return deck;
         }
 
