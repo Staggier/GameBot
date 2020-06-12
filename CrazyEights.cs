@@ -42,9 +42,14 @@ namespace GameBot
         [Description("The `place` command places the given card(s) if they satisfy the conditions of Crazy Eights.")]
         public async Task Place(CommandContext ctx, string cards)
         {
-            var player = await GetPlayer(ctx, ctx.Member.DisplayName);
-            if (player.user.DisplayName == "")
+            if (!ctx.Channel.IsPrivate)
+            {
+                await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Please play the game in your DMs!"));
                 return;
+            }
+
+            DiscordDmChannel dm = (DiscordDmChannel)ctx.Channel;
+            var player = await GetPlayer(dm.Recipients[0].Username);
 
             foreach (string card in cards.Split())
                 if (card.Length >= 4)
@@ -64,10 +69,10 @@ namespace GameBot
 
                 await Display.HandImg(player.hand, player.user.DisplayName);
                 await Display.TopPileImg(game.pile);
-                await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
+                await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
             }
             else
-                await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Cards cannot be placed!"));
+                await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Cards cannot be placed!"));
             return;
         }
 
@@ -75,12 +80,20 @@ namespace GameBot
         [Description("The `draw` command draws one card from the deck.")]
         public async Task Draw(CommandContext ctx)
         {
-            var player = await GetPlayer(ctx, ctx.Member.DisplayName);
+            if (!ctx.Channel.IsPrivate)
+            {
+                await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Please play the game in your DMs!"));
+                return;
+            }
+
+            DiscordDmChannel dm = (DiscordDmChannel)ctx.Channel;
+
+            var player = await GetPlayer(dm.Recipients[0].Username);
             player.hand.AddRange(await game.deck.Draw(1));
 
             await Display.HandImg(player.hand, player.user.DisplayName);
-            await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
-            
+            await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
+
             return;
         }
 
@@ -124,17 +137,28 @@ namespace GameBot
             return Task.FromResult(true);
         }
 
-        public Task<Player> GetPlayer(CommandContext ctx, string user)
+        public Task<Player> GetPlayer(string username)
         {
             foreach (Player player in game.players)
-                if (player.user.DisplayName == user)
+                if (player.user.DisplayName == username)
                     return Task.FromResult(player);
             return null;
         }
 
         public Task<bool> IsPlaceable(List<Card> test, Card top)
         {
-            return Task.FromResult(test.Count(c => c.value == "8") == test.Count ? true : false || test.Count(c => c.suit == top.suit) == test.Count ? true : false || test.Count(c => c.value == test[0].value) == test.Count ? true : false);
+            bool check = true;
+            if (test[0].value == top.value || test[0].suit == top.suit || test[0].value == "8")
+            {
+                for (int i = 1; i < test.Count; i++)
+                    if (!(test[i].value == test[i - 1].value))
+                    {
+                        check = false;
+                        break;
+                    }
+                return Task.FromResult(check);
+            }
+            return Task.FromResult(false);
         }
 
         public async Task<List<Card>> GetCards(CommandContext ctx, Player player, string s)
