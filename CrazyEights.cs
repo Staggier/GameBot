@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.CommandsNext.Attributes;
@@ -26,6 +28,7 @@ namespace GameBot
     {
         public Game game = new Game();
         public bool b1 = false;
+        public DiscordClient client = DiscordBot.discordBot;
 
         [Command("crazyeights")]
         [Description("The `crazy eights` command will start the game with the specified users in the `users` string.")]
@@ -46,7 +49,7 @@ namespace GameBot
             foreach (string card in cards.Split())
                 if (card.Length >= 4)
                 {
-                    await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Incorrect card format! Try entering the value and/or suit of one of your cards! Ex: 6 or 6D"));
+                    await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Incorrect card format! Try entering the value and/or suit of one of your cards! Ex: 6 or 6D"));
                     return;
                 }
 
@@ -59,14 +62,12 @@ namespace GameBot
                 foreach (Card c in chosen)
                     player.hand.Remove(c);
 
-                await Display.HandImg(player.hand);
+                await Display.HandImg(player.hand, player.user.DisplayName);
                 await Display.TopPileImg(game.pile);
-
-                await ctx.Channel.SendFileAsync("hand.png");
-                await ctx.Channel.SendFileAsync("top.png");
+                await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
             }
             else
-                await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Cards cannot be placed!"));
+                await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Cards cannot be placed!"));
             return;
         }
 
@@ -77,47 +78,50 @@ namespace GameBot
             var player = await GetPlayer(ctx, ctx.Member.DisplayName);
             player.hand.AddRange(await game.deck.Draw(1));
 
-            await Display.HandImg(player.hand);
-            await ctx.Channel.SendFileAsync("hand.png");
-            await ctx.Channel.SendFileAsync("top.png");
+            await Display.HandImg(player.hand, player.user.DisplayName);
+            await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
             
             return;
         }
 
         public async Task RunGame(CommandContext ctx)
         {
-            if (!b1)
+            try
             {
-                b1 = true;
-                foreach (Player player in game.players)
+                if (!b1)
                 {
-                    player.hand = await game.deck.Draw(5);
-                    await Display.HandImg(player.hand);
-                    await ctx.Channel.SendFileAsync("hand.png");
+                    b1 = true;
+                    foreach (Player player in game.players)
+                    {
+                        player.hand = await game.deck.Draw(5);
+                        await Display.HandImg(player.hand, player.user.DisplayName);
+                    }
+
+                    game.pile.Add(game.deck.card[0]);
+                    game.deck.card.RemoveAt(0);
+
+                    await Display.TopPileImg(game.pile);
+                    foreach (Player player in game.players)
+                        await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.DisplayCards(await client.GetChannelAsync(721038967155458059), player));
                 }
-
-                game.pile.Add(game.deck.card[0]);
-                game.deck.card.RemoveAt(0);
-
-                await Display.TopPileImg(game.pile);
-                await ctx.Channel.SendFileAsync("top.png");
+                await Task.Delay(-1);
             }
-            await Task.Delay(-1);
+            catch(Exception e)
+            {
+                await ctx.Member.SendMessageAsync(e.ToString());
+            }
         }
 
-        public async Task<bool> ValidUsers(CommandContext ctx, string users)
+        public Task<bool> ValidUsers(CommandContext ctx, string users)
         {
             foreach (string user in users.Split())
             {
                 if (new DiscordMemberConverter().TryConvert(user, ctx, out DiscordMember player))
                     game.players.Add(new Player { user = player });
                 else
-                {
-                    await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage($"Player `{user}` not found!"));
-                    return false;
-                }
+                    return Task.FromResult(false);
             }
-            return true;
+            return Task.FromResult(true);
         }
 
         public Task<Player> GetPlayer(CommandContext ctx, string user)
@@ -125,7 +129,7 @@ namespace GameBot
             foreach (Player player in game.players)
                 if (player.user.DisplayName == user)
                     return Task.FromResult(player);
-            return Task.FromResult(new Player());
+            return null;
         }
 
         public Task<bool> IsPlaceable(List<Card> test, Card top)
@@ -150,7 +154,7 @@ namespace GameBot
                 }
                 if (!check)
                 {
-                    await ctx.Channel.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Card not found!"));
+                    await ctx.Member.SendMessageAsync(null, false, await DiscordEmbed.ErrorMessage("Card not found!"));
                     return new List<Card>();
                 }
             }

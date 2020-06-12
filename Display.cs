@@ -6,7 +6,7 @@ namespace GameBot
 {
     public class Display
     {
-        public static Task HandImg(List<Card> hand)
+        public static Task HandImg(List<Card> hand, string username)
         {
             using (var image = new MagickImage("xc:none", 100 * hand.Count - 1 + 400, 726))
             {
@@ -16,7 +16,7 @@ namespace GameBot
                     image.Composite(new MagickImage(card.img), x, y, CompositeOperator.Over);
                     x += 100;
                 }
-                image.Write("hand.png");
+                image.Write($"{username}_hand.png");
                 return Task.CompletedTask;
             }
         }
